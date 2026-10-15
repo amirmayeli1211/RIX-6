@@ -48,6 +48,16 @@ class RailwayXray:
             return self.binary
         return shutil.which(self.binary)
 
+    def _temporary_config_path(self) -> Path:
+        """Keep the JSON suffix so Xray can infer the config format.
+
+        Xray determines the config parser from the filename extension. A name
+        like ``config.tmp`` is rejected as an unknown format; use
+        ``config.tmp.json`` while validating the new config.
+        """
+        suffix = self.config_path.suffix or ".json"
+        return self.config_path.with_name(f"{self.config_path.stem}.tmp{suffix}")
+
     @staticmethod
     def _usable(client: Client) -> bool:
         if not client.enabled:
@@ -141,7 +151,7 @@ class RailwayXray:
             usable_count = sum(1 for client in clients if self._usable(client))
 
             self.config_path.parent.mkdir(parents=True, exist_ok=True)
-            temporary = self.config_path.with_suffix(".tmp")
+            temporary = self._temporary_config_path()
             temporary.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding="utf-8")
             test = subprocess.run(
                 [binary, "run", "-test", "-config", str(temporary)],
