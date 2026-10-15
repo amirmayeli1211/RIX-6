@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="welcome-row"><div><div class="eyebrow">RAILWAY SELF-HOSTED / RIX STORM</div><h1>خانه و وضعیت سرور</h1><p class="muted">پنل و هستهٔ Xray داخل همین سرویس Railway اجرا می‌شوند؛ دیگر نیازی به ساخت نود یا اجرای دستور روی VPS نیست.</p></div><a class="button button-primary" href="/clients">＋ ساخت کاربر جدید</a></section>
+<div class="stats-grid">
+  <article class="stat-card"><div class="stat-top"><span>کل کاربران</span><span class="stat-icon">♙</span></div><strong>{{ client_count }}</strong><small>کاربران ثبت‌شده در پنل</small></article>
+  <article class="stat-card"><div class="stat-top"><span>کاربران فعال</span><span class="stat-icon green">✓</span></div><strong>{{ active_count }}</strong><small>براساس وضعیت و تاریخ اعتبار</small></article>
+  <article class="stat-card"><div class="stat-top"><span>هستهٔ Xray</span><span class="stat-icon {% if server_info.status.running %}green{% else %}amber{% endif %}">⌘</span></div><strong class="stat-small">{% if server_info.status.running %}در حال اجرا{% elif server_info.status.installed %}متوقف{% else %}نصب نشده{% endif %}</strong><small>{% if server_info.status.running %}{{ server_info.status.configured_users }} اتصال فعال در پیکربندی{% else %}وضعیت از runtime داخلی خوانده می‌شود{% endif %}</small></article>
+  <article class="stat-card"><div class="stat-top"><span>مصرف ثبت‌شده</span><span class="stat-icon">⇅</span></div><strong class="stat-small">{{ used_text }}</strong><small>آمار مصرف فعلاً دستی است</small></article>
+</div>
+<div class="two-column">
+  <section class="panel-card"><div class="panel-head"><div><div class="eyebrow">SERVER DETAILS</div><h2>اطلاعات سرور</h2></div><span class="status-pill status-{{ 'success' if server_info.status.running else 'danger' }}">{{ 'آنلاین' if server_info.status.running else 'نیازمند بررسی' }}</span></div>
+    <div class="node-properties railway-properties">
+      <div><small>محیط اجرا</small><b>Railway · یک سرویس</b></div>
+      <div><small>دامنهٔ عمومی</small><b class="truncate">{{ server_info.host }}</b></div>
+      <div><small>آدرس پنل</small><b class="truncate"><a href="{{ server_info.url }}" target="_blank" rel="noopener">{{ server_info.url }}</a></b></div>
+      <div><small>پورت کاربران</small><b>443 / HTTPS</b></div>
+      <div><small>انتقال</small><b>{{ server_info.transport }}</b></div>
+      <div><small>پروتکل‌های آماده</small><b>{{ server_info.protocols }}</b></div>
+      <div><small>کاربران بارگذاری‌شده در Xray</small><b>{{ server_info.status.configured_users }}</b></div>
+      <div><small>آخرین همگام‌سازی</small><b>{{ server_info.status.last_sync }}</b></div>
+    </div>
+    {% if not server_info.status.running %}<div class="notice notice-warning compact-notice"><span>!</span><p>{{ server_info.status.error or 'Xray هنوز آماده نیست. در Railway بخش Deploy Logs را بررسی کن تا دانلود و اجرای هسته تأیید شود.' }}</p></div>{% else %}<div class="notice notice-info compact-notice"><span>i</span><p>گواهی HTTPS توسط لبهٔ Railway مدیریت می‌شود؛ سرویس داخلی از مسیرهای WebSocket عبور می‌دهد. نیازی به تنظیم TLS یا ساخت Agent جداگانه نیست.</p></div>{% endif %}
+  </section>
+  <section class="panel-card"><div class="panel-head"><div><div class="eyebrow">RECENT CLIENTS</div><h2>کاربران اخیر</h2></div><a class="text-link" href="/clients">مشاهده همه ←</a></div>
+  {% if clients %}<div class="recent-list">{% for row in clients %}<div class="recent-item"><div class="avatar">{{ row.client.name[:1] }}</div><div class="recent-main"><b>{{ row.client.name }}</b><small>{{ row.client.protocol|upper }} · {{ row.node.host if row.node else '—' }}</small></div><span class="status-pill status-{{ row.status_kind }}">{{ row.status }}</span></div>{% endfor %}</div>{% else %}<div class="empty-inline"><b>هنوز کاربری نساخته‌ای</b><p>از بخش کاربران اولین اشتراک را بساز.</p><a href="/clients" class="text-link">ساخت کاربر ←</a></div>{% endif %}</section>
+</div>
+<div class="notice notice-info"><span>i</span><p><b>حفظ اطلاعات:</b> برای باقی‌ماندن کاربران بعد از Deploy مجدد، در Railway یک Volume به مسیر <code>/data</code> متصل کن و متغیر <code>DATA_ENCRYPTION_KEY</code> را ثابت نگه دار. محدودیت حجم هنوز آمار زنده نیست و به‌صورت دستی ثبت می‌شود. این نسخه برای یک replica طراحی شده است.</p></div>
+{% endblock %}

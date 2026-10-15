@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block standalone %}
+<div class="login-scene"><div class="login-glow"></div><form class="login-card" method="post" action="/login">
+  <div class="brand login-brand"><span class="brand-mark">R</span><span><b>RIX STORM</b><small>SECURE ADMIN ACCESS</small></span></div>
+  <div class="eyebrow">CONTROL CENTER / AUTH</div><h1>خوش برگشتی</h1><p class="muted">برای ورود به پنل مدیریت، اطلاعات مدیر را وارد کن.</p>
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label class="field"><span>نام کاربری</span><input name="username" required autocomplete="username" placeholder="نام کاربری مدیر"></label>
+  <label class="field"><span>رمز عبور</span><input name="password" type="password" required autocomplete="current-password" placeholder="رمز عبور"></label>
+  <button class="button button-primary button-wide" type="submit">ورود امن <span>↗</span></button>
+  <p class="login-note"><span class="online-dot"></span> نشست امن · دسترسی مدیر</p>
+</form></div>
+{% endblock %}

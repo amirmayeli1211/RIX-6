@@ -1,0 +1,14 @@
+:{$PORT} {
+    encode zstd gzip
+
+    @vless path /rws/vless /rws/vless/*
+    reverse_proxy @vless 127.0.0.1:11001
+
+    @vmess path /rws/vmess /rws/vmess/*
+    reverse_proxy @vmess 127.0.0.1:11002
+
+    @trojan path /rws/trojan /rws/trojan/*
+    reverse_proxy @trojan 127.0.0.1:11003
+
+    reverse_proxy 127.0.0.1:8000
+}
