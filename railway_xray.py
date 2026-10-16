@@ -29,12 +29,20 @@ WEBSOCKET_PATHS = {
 }
 INTERNAL_PORTS = {"vless": 11001, "vmess": 11002, "trojan": 11003}
 LOCAL_NODE_MARKER = "local://railway-xray"
+RIX_XRAY_BUILD = "2.5.2-json-path-normalized"
 
 
 class RailwayXray:
     def __init__(self) -> None:
         self.binary = os.getenv("XRAY_BIN", "xray")
-        self.config_path = Path(os.getenv("XRAY_CONFIG_PATH", "/tmp/rix-storm-xray/config.json"))
+        # Always give Xray a JSON config filename. Older panel builds used
+        # config_path.with_suffix(".tmp"), and some deployments may retain
+        # XRAY_CONFIG_PATH=/tmp/rix-storm-xray/config.tmp from those builds.
+        # Normalize that stale value instead of ever passing a .tmp file to Xray.
+        configured_path = Path(os.getenv("XRAY_CONFIG_PATH", "/tmp/rix-storm-xray/config.json"))
+        if configured_path.suffix.lower() != ".json":
+            configured_path = configured_path.with_suffix(".json")
+        self.config_path = configured_path
         self.log_path = self.config_path.with_name("xray.log")
         self._process: subprocess.Popen | None = None
         self._lock = threading.RLock()
@@ -49,14 +57,8 @@ class RailwayXray:
         return shutil.which(self.binary)
 
     def _temporary_config_path(self) -> Path:
-        """Keep the JSON suffix so Xray can infer the config format.
-
-        Xray determines the config parser from the filename extension. A name
-        like ``config.tmp`` is rejected as an unknown format; use
-        ``config.tmp.json`` while validating the new config.
-        """
-        suffix = self.config_path.suffix or ".json"
-        return self.config_path.with_name(f"{self.config_path.stem}.tmp{suffix}")
+        """Return a temporary filename whose final extension is always .json."""
+        return self.config_path.with_name(f"{self.config_path.stem}.tmp.json")
 
     @staticmethod
     def _usable(client: Client) -> bool:
@@ -160,7 +162,10 @@ class RailwayXray:
             if test.returncode != 0:
                 temporary.unlink(missing_ok=True)
                 detail = (test.stderr or test.stdout or "Xray config test failed")[-1600:]
-                self._last_error = "Xray تنظیمات داخلی را نپذیرفت: " + detail
+                self._last_error = (
+                    f"[RIX-XRAY-BUILD={RIX_XRAY_BUILD}] "
+                    f"Xray تنظیمات داخلی را نپذیرفت (فایل اعتبارسنجی: {temporary.name}): " + detail
+                )
                 raise RuntimeError(self._last_error)
 
             temporary.replace(self.config_path)
@@ -234,6 +239,7 @@ class RailwayXray:
                 "error": self._last_error,
                 "pid": self._process.pid if running and self._process else None,
                 "protocols": list(SUPPORTED_PROTOCOLS),
+                "runtime_build": RIX_XRAY_BUILD,
             }
 
     def shutdown(self) -> None:
